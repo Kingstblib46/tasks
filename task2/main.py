@@ -1,20 +1,20 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt #This was imported but not used in PDF code
+# import matplotlib.pyplot as plt #This was imported but not used in PDF code
 import random
-from pandas.core.frame import DataFrame #This was imported but not used in PDF code
+# from pandas.core.frame import DataFrame #This was imported but not used in PDF code
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
-import torch.nn.functional as F #This was imported but not used in PDF code
+# import torch.nn.functional as F #This was imported but not used in PDF code
 
 from sklearn.datasets import fetch_openml
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.utils.class_weight import compute_class_weight #This was imported but not used in PDF code
+# from sklearn.utils.class_weight import compute_class_weight #This was imported but not used in PDF code
 from fairlearn.metrics import MetricFrame
 
 # Assuming utils.py is in the same directory and contains the functions from above
@@ -37,7 +37,6 @@ parser.add_argument("--beta", default=0.5, type=float)
 parser.add_argument("--seed", default=42, type=int)
 parser.add_argument("--model", default='MLP', type=str, choices=['MLP', 'LR', 'SVM'])
 
-# args = parser.parse_args() # Use default args for notebook execution if not running from command line
 # For testing purposes, let's create a Namespace object similar to what parse_args() would return
 args = argparse.Namespace(
     epoch=2,
@@ -60,7 +59,7 @@ torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 random.seed(args.seed)
 
-print(f'beta: {args.beta}, weightSum: {args.weightSum}') # Used f-string
+print(f'beta: {args.beta}, weightSum: {args.weightSum}')
 
 #加载数据
 if args.dataset == 'adult':
@@ -84,7 +83,7 @@ if args.dataset == 'adult':
 elif args.dataset == 'compas':
     # Load the uploaded Processed_Compas.csv
     try:
-        data_df = pd.read_csv("Processed_Compas.csv") # [cite: 58]
+        data_df = pd.read_csv("Processed_Compas.csv")
     except FileNotFoundError:
         print("Error: Processed_Compas.csv not found. Please ensure it's in the same directory.")
         exit()
@@ -126,14 +125,6 @@ for relate in args.related:
       coef = utils.cal_correlation(data_frame, args.s, relate)
       print(f'coefficient between {args.s} and {relate} is: {coef}')
     if relate in data_frame.columns and 'target' in data_frame.columns:
-      # temp_df_for_target_corr = data_frame.copy() # Avoid modifying original
-      # if data_frame['target'].dtype == 'object': # Ensure target is numeric for corr
-      #    temp_df_for_target_corr['target_numeric'] = pd.factorize(temp_df_for_target_corr['target'])[0]
-      #    target_col_for_corr = 'target_numeric'
-      # else:
-      #    target_col_for_corr = 'target'
-      # coef_target = utils.cal_correlation(temp_df_for_target_corr, target_col_for_corr, relate)
-
       # Simpler approach if target is already 0/1
       coef_target = utils.cal_correlation(data_frame, 'target', relate)
       print(f'coefficient between target and {relate} is: {coef_target}')
@@ -143,9 +134,6 @@ for relate in args.related:
 indict = np.arange(X.shape[0]) # Renamed from indict to avoid clash with dict type
 X_train, X_test, y_train, y_test, ind_train, ind_test = train_test_split(X, y_true, indict,
                                                                         test_size=0.5, stratify=y_true, random_state=7)
-
-# Save X_train columns for counter_sample reindexing if needed by the scaler.
-# processed_X_train_cols = X_train.columns.tolist() # If X_train is pandas DF before scaling
 
 scaler = StandardScaler().fit(X_train)
 X_train_scaled = scaler.transform(X_train) # Renamed to avoid overwriting
@@ -163,14 +151,12 @@ processed_X_train_df = pd.DataFrame(X_train, columns=X.columns) # Dummified, uns
 #定义自定义 Pandas 数据集
 class PandasDataSet(TensorDataset):
     def __init__(self, *dataframes): # Python methods are usually snake_case
-        # tensors = [self._df_to_tensor(df) for df in dataframes] # Corrected list comprehension
         tensors = tuple(self._df_to_tensor(df) for df in dataframes) # TensorDataset expects a tuple of tensors
         super(PandasDataSet, self).__init__(*tensors)
 
     def _df_to_tensor(self, df):
         if isinstance(df, np.ndarray):
             return torch.from_numpy(df).float()
-        # return torch.from_numpy(df.values).float() # Original
         if isinstance(df, pd.DataFrame) or isinstance(df, pd.Series):
             return torch.from_numpy(df.values).float()
         return torch.tensor(df).float() # Fallback for other types like list
@@ -278,7 +264,6 @@ def Perturb_train(clf, data_loader, optimizer, criterion_func, related_attrs_lis
             x_new = utils.counter_sample(data_frame, original_indices_for_batch, related_attr, scaler) # X_raw is `data_frame`
             p_y_new = clf(x_new.to(x_batch.device)) # Ensure device consistency
 
-            # p_stack = torch.stack((p_y[:,1], p_y_new[:,1]), dim=1) # Assuming binary classification and prob of class 1
             # Handle SVM case where output might be single value
             if args.model == 'SVM':
                  p_y_class1 = torch.sigmoid(p_y.squeeze()) # Convert raw scores to pseudo-probabilities if SVM
@@ -289,7 +274,6 @@ def Perturb_train(clf, data_loader, optimizer, criterion_func, related_attrs_lis
 
             p_stack = torch.stack((p_y_class1, p_y_new_class1), dim=1)
             p_order = torch.argsort(p_stack, dim=-1)
-            # cor_loss = torch.square(p_stack[:, p_order[:,1].detach()] - p_stack[:, p_order[:,0].detach()]).mean() # Original
             # Corrected indexing for p_stack based on p_order
             # This loss aims to make predictions invariant to changes in related_attr
             # It penalizes differences in predictions when related_attr is changed.
@@ -328,14 +312,12 @@ def CorreErase_train(clf, data_loader, optimizer, criterion_func, related_attrs_
                 continue
 
             # Get indices of these columns in X (and thus in x_batch)
-            # selected_column_indices = [X.columns.get_loc(col) for col in cols_for_related_attr if col in X.columns] # X.columns from main scope
-            selected_column_indices = [processed_X_train_df.columns.get_loc(col) for col in cols_for_related_attr if col in processed_X_train_df.columns]
+            selected_column_indices = [processed_X_train_df.columns.get_loc(col) for col in cols_for_related_attr if col in processed_X_train_df.columns] # X.columns from main scope
 
 
             if not selected_column_indices:
                 continue
-
-            # x_related_features = x_batch[:, selected_column_indices] # Features in the batch corresponding to related_attr
+            
             # The original PDF code for cor_loss is very complex:
             # torch.sum(torch.abs(torch.mean(torch.mul(x[:,selected_column].reshape(1, x.shape[0], -1), (p_y - p_y.mean(dim=0)).transpose(0,1).reshape((-1, p_y.shape[0],1))),dim=1)))
             # This seems to be aiming for some form of covariance or correlation penalty.
@@ -364,7 +346,6 @@ def CorreErase_train(clf, data_loader, optimizer, criterion_func, related_attrs_
                 pred_centered = pred_for_corr - pred_for_corr.mean()
                 
                 covariance = (feature_centered * pred_centered).mean()
-                # cor_loss_per_feature = torch.abs(covariance) # Penalize absolute covariance
                 # Or square to make it differentiable and always positive
                 cor_loss_per_feature = torch.square(covariance)
 
@@ -408,7 +389,6 @@ def Gfair_train(clf, data_loader, optimizer, criterion_func, related_attrs_list,
             group_TPR_values = utils.groupTPR(p_y_probs.numpy(), y_batch.cpu().numpy(), current_batch_group_labels, batch_internal_indices)
             
             if len(group_TPR_values) >= 2: # Need at least two groups to compare
-                # group_TPR_loss = torch.square(max(group_TPR_values) - min(group_TPR_values)) # Original PDF had .detach() error
                 # Convert to tensor and ensure it's on the correct device
                 group_TPR_tensor = torch.tensor(group_TPR_values, device=p_y.device, dtype=torch.float32)
                 group_TPR_loss = torch.square(torch.max(group_TPR_tensor) - torch.min(group_TPR_tensor))
@@ -432,10 +412,6 @@ def CorreLearn_train(clf, data_loader, optimizer, criterion_func, related_attrs_
     # Students are expected to complete this part based on the paper's methodology.
     print("CorreLearn_train is not fully implemented as per the source PDF/PPTX.")
     print("Please complete the implementation based on the 'learnCorre' method from the reference paper.")
-
-    # Placeholder: just run pretraining for now to make it runnable
-    # clf = pretrain_classifier(clf, data_loader, optimizer, criterion_func)
-    # return clf, related_weights_np # Return original weights as it's not updated
     
     # Basic structure based on the PDF's handwritten part
     UPDATE_MODEL_ITERS = 1 # From PDF image
@@ -477,7 +453,6 @@ def CorreLearn_train(clf, data_loader, optimizer, criterion_func, related_attrs_
                     covariance = (feature_centered * pred_centered).mean()
                     cor_loss_for_attr += torch.square(covariance)
                 
-                # total_cor_loss += cor_loss_for_attr * related_weights_tensor[i] # Use the current weight
                 # The image shows "loss = loss + cor_loss * related_weight * weightSum"
                 # This might imply weightSum is an additional factor for the correlation part.
                 total_cor_loss += cor_loss_for_attr * related_weights_tensor[i] * weightsum_arg
@@ -530,7 +505,6 @@ def CorreLearn_train(clf, data_loader, optimizer, criterion_func, related_attrs_
             
             # --- THIS WEIGHT UPDATE MECHANISM NEEDS TO BE CORRECTLY IMPLEMENTED FROM THE REFERENCED PAPER ---
             # --- The PDF sketch is insufficient for a correct implementation. ---
-            # For now, returning the weights unchanged.
             pass # Placeholder for actual weight update logic
 
     return clf, related_weights_tensor.cpu().numpy() # Return updated clf and current weights
@@ -559,7 +533,6 @@ for epoch in range(args.epoch):
     elif args.method == 'groupTPR':
         clf = Gfair_train(clf, train_loader, clf_optimizer, clf_criterion, args.related, args.r_weight)
     elif args.method == 'learnCorre':
-        # related_weights = np.array(args.r_weight) # Initialize weights
         # Ensure related_weights match the number of related attributes
         current_related_weights = np.array(args.r_weight) if len(args.r_weight) == len(args.related) else np.full(len(args.related), 1.0/len(args.related))
 
@@ -677,7 +650,6 @@ if group_equal_odds_np.size > 0 :
         print(f'eo_difference (mean absolute diff from mean TPR): {eo_diff}')
         if args.dataset == 'compas' and group_equal_odds_np.shape[0] >=3 : # Assuming at least 3 groups for this specific print
              # This assumes specific ordering/meaning of groups 0 and 2.
-             # print(f'target eo difference (group 0 vs group 2): {np.absolute(group_equal_odds_np[0] - group_equal_odds_np[2])}')
              pass # This specific metric might need more context on group identity
     elif group_equal_odds_np.ndim == 1 and group_equal_odds_np.shape[0] > 1: # If it's a 1D array of TPRs per group
         eo_diff = np.nanstd(group_equal_odds_np) # Standard deviation as a measure of disparity
@@ -691,7 +663,6 @@ if group_selection_rate_np.size > 0:
         sr_diff = np.nanmean(np.absolute(group_selection_rate_np - np.nanmean(group_selection_rate_np, axis=0, keepdims=True)))
         print(f'sr_difference (mean absolute diff from mean SR): {sr_diff}')
         if args.dataset == 'compas' and group_selection_rate_np.shape[0] >=3:
-            # print(f'target sr difference (group 0 vs group 2): {np.absolute(group_selection_rate_np[0] - group_selection_rate_np[2])}')
             pass
     elif group_selection_rate_np.ndim == 1 and group_selection_rate_np.shape[0] > 1:
         sr_diff = np.nanstd(group_selection_rate_np)
