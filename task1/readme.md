@@ -48,7 +48,7 @@ membership-inference-attack/
 
 ## 环境要求
 
-* Python 3.8+
+* Python 3.10+
 * PyTorch (详见 `requirements.txt`)
 * Torchvision (详见 `requirements.txt`)
 * Scikit-learn (详见 `requirements.txt`)
@@ -116,10 +116,10 @@ python cli.py membership-inference <COMMAND> [OPTIONS]
 
 **示例：在 CIFAR10 数据集上从头开始训练所有模型并进行攻击**
 ```bash
-python cli.py membership-inference train-dummy --dataset CIFAR10 --data-path ../data --model-path ../models_output --verbose --augm
+python cli.py membership-inference train-dummy --dataset CIFAR10 --data-path ./data --model-path ./models_output
 ```
 
 **示例：使用 MNIST 数据集，并假设目标和影子模型已预训练好**
 ```bash
-python cli.py membership-inference pretrained-dummy --dataset MNIST --data-path ../data --model-path ../models_output --verbose
+python cli.py membership-inference train-dummy --dataset CIFAR10 --data-path ./data --model-path ./models_output
 ```

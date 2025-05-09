@@ -151,21 +151,8 @@ pip install torch torchvision torchaudio numpy pandas scikit-learn fairlearn mat
   * 自定义的公平性指标，如不同群体的均等化赔率（TPR）差异和选择率差异。
   * 如果使用 `learnCorre` 方法（并在您完成实现后），还会输出学习到的 lambda 权重。
 
-根据 "第12章 模型公平性检测与提升原理与实践 (12.2 模型公平性检测与提升-实践).pptx" 文件的描述，可以通过绘制热力图来可视化不同参数设置下准确率、EO (Equalized Odds) 和 SR (Selection Rate) 指标的变化，以分析模型公平性提升前后的对比。
-
-## 参考文献
-
-[1] Zhao T, Dai E, Shu K, et al. Towards fair classifiers without sensitive attributes: Exploring biases in related features[C]//Proceedings of the Fifteenth ACM International Conference on Web Search and Data Mining. 2022: 1433-1442. (或其他与 `CorreLearn_train` 方法相关的参考论文)
-
 ## 注意事项
 
   * 代码中的 `CorreLearn_train` 函数是不完整的，需要用户根据参考资料自行实现。
   * 数据集 `Processed_Compas.csv` 必须存在于正确的路径。
   * 某些公平性方法和指标的计算可能对参数设置和数据特性非常敏感。
-
-## 未来工作 (可选)
-
-  * 完整实现 `CorreLearn_train` 函数。
-  * 扩展支持更多的数据集和公平性指标。
-  * 添加更详细的结果可视化功能。
-  * 对比更多前沿的公平性提升算法。
